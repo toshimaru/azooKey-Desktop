@@ -95,6 +95,9 @@ public enum InputState: Sendable, Hashable {
                 } else {
                     return (.fallthrough, .fallthrough)
                 }
+            case .reconvert:
+                // Trigger reconversion for selected text
+                return (.fallthrough, .fallthrough)
             case .unknown, .navigation, .backspace, .enter, .escape, .function, .editSegment, .tab, .forget, .transformSelectedText:
                 return (.fallthrough, .fallthrough)
             }
@@ -121,7 +124,7 @@ public enum InputState: Sendable, Hashable {
                 return (.insertWithoutMarkedText(diacritic + "\n"), .transition(.none))
             case .tab:
                 return (.insertWithoutMarkedText(diacritic + "\t"), .transition(.none))
-            case .unknown, .space, .英数, .navigation, .editSegment, .suggest, .forget, .transformSelectedText:
+            case .unknown, .space, .英数, .navigation, .editSegment, .suggest, .forget, .transformSelectedText, .reconvert:
                 return (.insertWithoutMarkedText(diacritic), .transition(.none))
             }
         case .composing:
@@ -178,7 +181,7 @@ public enum InputState: Sendable, Hashable {
                 } else {
                     return (.fallthrough, .fallthrough)
                 }
-            case .unknown, .transformSelectedText, .deadKey:
+            case .unknown, .tab, .transformSelectedText, .deadKey, .reconvert:
                 return (.fallthrough, .fallthrough)
             }
         case .previewing:
@@ -225,7 +228,7 @@ public enum InputState: Sendable, Hashable {
                 }
             case .editSegment(let count):
                 return (.editSegment(count), .transition(.selecting))
-            case .unknown, .suggest, .transformSelectedText, .deadKey:
+            case .unknown, .suggest, .transformSelectedText, .deadKey, .reconvert:
                 return (.fallthrough, .fallthrough)
             }
         case .selecting:
@@ -299,7 +302,7 @@ public enum InputState: Sendable, Hashable {
                 return (.consume, .fallthrough)
             case .英数:
                 return (.commitMarkedTextAndSelectInputLanguage(.english), .transition(.none))
-            case .unknown, .suggest, .transformSelectedText, .deadKey:
+            case .unknown, .suggest, .tab, .transformSelectedText, .reconvert, .deadKey:
                 return (.fallthrough, .fallthrough)
             }
         case .replaceSuggestion:

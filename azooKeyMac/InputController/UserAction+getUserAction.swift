@@ -155,6 +155,11 @@ extension UserAction {
         case 48: // Tab
             return .tab
         case 49: // Space
+            // Check for Shift + Space for reconversion
+            if event.modifierFlags.contains(.shift) && event.modifierFlags.isDisjoint(with: [.command, .control, .option]) {
+                return .reconvert
+            }
+
             switch (Config.TypeHalfSpace().value, event.modifierFlags.contains(.shift)) {
             case (true, true), (false, false):
                 // 全角スペース
