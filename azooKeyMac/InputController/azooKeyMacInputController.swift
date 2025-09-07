@@ -175,6 +175,23 @@ class azooKeyMacInputController: IMKInputController { // swiftlint:disable:this 
 
         let userAction = UserAction.getUserAction(event: event, inputLanguage: inputLanguage)
 
+        // Handle reconvert action with selected text check
+        if case .reconvert = userAction {
+            let selectedRange = client.selectedRange()
+            self.segmentsManager.appendDebugMessage("Reconvert action detected. Selected range: \(selectedRange)")
+            if selectedRange.length > 0 {
+                var actualRange = NSRange()
+                if let selectedText = client.string(from: selectedRange, actualRange: &actualRange) {
+                    self.segmentsManager.appendDebugMessage("Reconvert: Selected text found: '\(selectedText)'")
+                    self.startReconversion(selectedText: selectedText, client: client)
+                    return true
+                }
+            } else {
+                self.segmentsManager.appendDebugMessage("Reconvert: No text selected")
+                return true
+            }
+        }
+
         // Handle suggest action with selected text check (prevent recursive calls)
         if case .suggest = userAction {
             // Prevent recursive window calls
@@ -331,6 +348,9 @@ class azooKeyMacInputController: IMKInputController { // swiftlint:disable:this 
         case .transformSelectedText(let selectedText, let prompt):
             self.segmentsManager.appendDebugMessage("Executing transformSelectedText with text: '\(selectedText)' and prompt: '\(prompt)'")
             self.transformSelectedText(selectedText: selectedText, prompt: prompt)
+        case .startReconversion(let selectedText):
+            self.segmentsManager.appendDebugMessage("Executing startReconversion with text: '\(selectedText)'")
+            self.startReconversion(selectedText: selectedText, client: client)
         // MARK: 特殊ケース
         case .consume:
             // 何もせず先に進む

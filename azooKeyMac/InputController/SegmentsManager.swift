@@ -35,6 +35,9 @@ final class SegmentsManager {
     private var shouldShowDebugCandidateWindow: Bool = false
     private var debugCandidates: [Candidate] = []
 
+    // Reconversion candidates stored separately
+    private var reconversionCandidates: [Candidate]?
+
     private var replaceSuggestions: [Candidate] = []
     private var suggestSelectionIndex: Int?
 
@@ -165,6 +168,7 @@ final class SegmentsManager {
         self.kanaKanjiConverter.stopComposition()
         self.kanaKanjiConverter.commitUpdateLearningData()
         self.rawCandidates = nil
+        self.reconversionCandidates = nil
         self.didExperienceSegmentEdition = false
         self.lastOperation = .other
         self.composingText.stopComposition()
@@ -178,6 +182,7 @@ final class SegmentsManager {
         self.composingText.stopComposition()
         self.kanaKanjiConverter.stopComposition()
         self.rawCandidates = nil
+        self.reconversionCandidates = nil
         self.didExperienceSegmentEdition = false
         self.lastOperation = .other
         self.shouldShowCandidateWindow = false
@@ -188,6 +193,7 @@ final class SegmentsManager {
     /// 日本語入力自体をやめる
     func stopJapaneseInput() {
         self.rawCandidates = nil
+        self.reconversionCandidates = nil
         self.didExperienceSegmentEdition = false
         self.lastOperation = .other
         self.kanaKanjiConverter.commitUpdateLearningData()
@@ -282,6 +288,11 @@ final class SegmentsManager {
     }
 
     private var candidates: [Candidate]? {
+        // Return reconversion candidates if available (takes precedence)
+        if let reconversionCandidates {
+            return reconversionCandidates
+        }
+
         if let rawCandidates {
             if !self.didExperienceSegmentEdition {
                 if rawCandidates.firstClauseResults.contains(where: { self.composingText.isWholeComposingText(composingCount: $0.composingCount) }) {
@@ -337,6 +348,7 @@ final class SegmentsManager {
         // 不要
         if composingText.isEmpty {
             self.rawCandidates = nil
+            self.reconversionCandidates = nil
             self.kanaKanjiConverter.stopComposition()
             return
         }
@@ -362,6 +374,39 @@ final class SegmentsManager {
     @MainActor func update(requestRichCandidates: Bool) {
         self.updateRawCandidate(requestRichCandidates: requestRichCandidates)
         self.shouldShowCandidateWindow = true
+    }
+
+    @MainActor func setReconversionCandidates(candidates: [Candidate]) {
+        self.reconversionCandidates = candidates
+        self.shouldShowCandidateWindow = true
+        appendDebugMessage("setReconversionCandidates: Set \(candidates.count) reconversion candidates")
+    }
+
+    // Get kanji conversion candidates for reconversion
+    @MainActor func getKanjiConversionCandidates(for hiraganaText: String) -> [Candidate] {
+        guard !hiraganaText.isEmpty else {
+            return []
+        }
+
+        // Create a temporary ComposingText for conversion
+        var tempComposingText = ComposingText()
+        for char in hiraganaText {
+            tempComposingText.insertAtCursorPosition([.init(piece: InputPiece.character(char), inputStyle: .direct)])
+        }
+
+        // Get conversion options
+        let conversionOptions = options(leftSideContext: "", requestRichCandidates: false)
+
+        // Request candidates from the kana-kanji converter
+        let conversionResult = kanaKanjiConverter.requestCandidates(tempComposingText, options: conversionOptions)
+
+        // Filter out the original hiragana text and empty results
+        let kanjiCandidates = conversionResult.mainResults.filter { candidate in
+            candidate.text != hiraganaText && !candidate.text.isEmpty
+        }
+
+        appendDebugMessage("getKanjiConversionCandidates: Found \(kanjiCandidates.count) kanji candidates for '\(hiraganaText)'")
+        return kanjiCandidates
     }
 
     /// - note: 画面更新との整合性を保つため、この関数の実行前に左文脈を取得し、これを引数として与える
