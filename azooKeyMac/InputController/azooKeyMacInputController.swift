@@ -169,21 +169,9 @@ class azooKeyMacInputController: IMKInputController { // swiftlint:disable:this 
 
         let userAction = UserAction.getUserAction(event: event, inputLanguage: inputLanguage)
 
-        // Handle reconvert action with selected text check
-        if case .reconvert = userAction {
-            let selectedRange = client.selectedRange()
-            self.segmentsManager.appendDebugMessage("Reconvert action detected. Selected range: \(selectedRange)")
-            if selectedRange.length > 0 {
-                var actualRange = NSRange()
-                if let selectedText = client.string(from: selectedRange, actualRange: &actualRange) {
-                    self.segmentsManager.appendDebugMessage("Reconvert: Selected text found: '\(selectedText)'")
-                    self.startReconversion(selectedText: selectedText, client: client)
-                    return true
-                }
-            } else {
-                self.segmentsManager.appendDebugMessage("Reconvert: No text selected")
-                return true
-            }
+        // Handle reconversion-related actions
+        if let result = handleReconversionActions(userAction: userAction, client: client) {
+            return result
         }
 
         // Handle suggest action with selected text check (prevent recursive calls)
@@ -214,6 +202,45 @@ class azooKeyMacInputController: IMKInputController { // swiftlint:disable:this 
             enableSuggestion: Config.EnableOpenAiApiKey().value
         )
         return handleClientAction(clientAction, clientActionCallback: clientActionCallback, client: client)
+    }
+
+    /// Handle reconversion-related UserActions (.reconvert and .かな)
+    /// Returns Bool? - nil means continue processing, true/false means return that value
+    @MainActor private func handleReconversionActions(userAction: UserAction, client: IMKTextInput) -> Bool? {
+        switch userAction {
+        case .reconvert:
+            let selectedRange = client.selectedRange()
+            self.segmentsManager.appendDebugMessage("Reconvert action detected. Selected range: \(selectedRange)")
+            if selectedRange.length > 0 {
+                var actualRange = NSRange()
+                if let selectedText = client.string(from: selectedRange, actualRange: &actualRange) {
+                    self.segmentsManager.appendDebugMessage("Reconvert: Selected text found: '\(selectedText)'")
+                    self.startReconversion(selectedText: selectedText, client: client)
+                    return true
+                }
+            } else {
+                self.segmentsManager.appendDebugMessage("Reconvert: No text selected")
+                return true
+            }
+        case .かな:
+            let selectedRange = client.selectedRange()
+            self.segmentsManager.appendDebugMessage("Kana key pressed. Selected range: \(selectedRange)")
+            if selectedRange.length > 0 {
+                var actualRange = NSRange()
+                if let selectedText = client.string(from: selectedRange, actualRange: &actualRange) {
+                    self.segmentsManager.appendDebugMessage("Kana key: Selected text found, triggering reconversion: '\(selectedText)'")
+                    self.startReconversion(selectedText: selectedText, client: client)
+                    return true
+                }
+            }
+            // If no text selected, fall through to normal Kana key processing via InputState
+            self.segmentsManager.appendDebugMessage("Kana key: No text selected, proceeding with language switch")
+            // Return nil to continue processing
+            return nil
+        default:
+            return nil
+        }
+        return nil
     }
 
     private var inputStyle: InputStyle {
