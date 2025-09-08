@@ -66,6 +66,20 @@ extension azooKeyMacInputController {
             ))
         }
 
+        // Add kanji-to-hiragana reverse conversion using system API
+        let kanjiReadings = getReadingFromSystemAPI(for: text)
+        for reading in kanjiReadings {
+            if reading != text && reading != hiragana {
+                candidates.append(Candidate(
+                    text: reading,
+                    value: -10, // Lower priority than direct conversions
+                    composingCount: .surfaceCount(text.count),
+                    lastMid: 0,
+                    data: []
+                ))
+            }
+        }
+
         // Get kanji conversion candidates using the kana-kanji converter
         if !hiragana.isEmpty {
             let kanjiCandidates = getKanjiCandidates(from: hiragana)
@@ -128,6 +142,83 @@ extension azooKeyMacInputController {
     @MainActor private func getKanjiCandidates(from hiragana: String) -> [Candidate] {
         // Use SegmentsManager's public method to get kanji candidates
         segmentsManager.getKanjiConversionCandidates(for: hiragana)
+    }
+
+    // Get hiragana reading from kanji using system API (CFStringTokenizer)
+    private func getReadingFromSystemAPI(for text: String) -> [String] {
+        guard !text.isEmpty else {
+            return []
+        }
+
+        // Check if text contains kanji characters
+        let containsKanji = text.contains { char in
+            let unicodeValue = char.unicodeScalars.first?.value ?? 0
+            return unicodeValue >= 0x4E00 && unicodeValue <= 0x9FFF
+        }
+
+        guard containsKanji else {
+            return []
+        }
+
+        let inputText = text as NSString
+        let outputText = NSMutableString()
+
+        var range: CFRange = CFRangeMake(0, inputText.length)
+        let locale: CFLocale = CFLocaleCopyCurrent()
+
+        // Create tokenizer
+        let tokenizer: CFStringTokenizer = CFStringTokenizerCreate(
+            kCFAllocatorDefault,
+            inputText as CFString,
+            range,
+            kCFStringTokenizerUnitWordBoundary,
+            locale
+        )
+
+        // Go to first position
+        var tokenType: CFStringTokenizerTokenType = CFStringTokenizerGoToTokenAtIndex(tokenizer, 0)
+
+        // Perform morphological analysis
+        while tokenType.rawValue != 0 {
+            range = CFStringTokenizerGetCurrentTokenRange(tokenizer)
+
+            // Get latin transcription (romaji)
+            if let latin = CFStringTokenizerCopyCurrentTokenAttribute(tokenizer, kCFStringTokenizerAttributeLatinTranscription) {
+                guard let romaji = latin as? NSString else {
+                    continue
+                }
+
+                // Convert to hiragana
+                guard let furigana = romaji.mutableCopy() as? NSMutableString else {
+                    continue
+                }
+                let success = CFStringTransform(furigana as CFMutableString, nil, kCFStringTransformLatinHiragana, false)
+
+                if success {
+                    outputText.append(furigana as String)
+                } else {
+                    // Fallback: append original text if conversion fails
+                    let substring = inputText.substring(with: NSRange(location: range.location, length: range.length))
+                    outputText.append(substring)
+                }
+            } else {
+                // No latin transcription available, append original text
+                let substring = inputText.substring(with: NSRange(location: range.location, length: range.length))
+                outputText.append(substring)
+            }
+
+            tokenType = CFStringTokenizerAdvanceToNextToken(tokenizer)
+        }
+
+        let result = outputText as String
+
+        // Return array with the reading if different from original
+        if result != text && !result.isEmpty {
+            self.segmentsManager.appendDebugMessage("getReadingFromSystemAPI: '\(text)' -> '\(result)'")
+            return [result]
+        }
+
+        return []
     }
 
     @MainActor private func setupReconversionState(candidates: [Candidate], selectedRange: NSRange, client: IMKTextInput) {
