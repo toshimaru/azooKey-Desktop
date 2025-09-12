@@ -95,10 +95,7 @@ public enum InputState: Sendable, Hashable {
                 } else {
                     return (.fallthrough, .fallthrough)
                 }
-            case .reconvert:
-                // Trigger reconversion for selected text
-                return (.fallthrough, .fallthrough)
-            case .unknown, .navigation, .backspace, .enter, .escape, .function, .editSegment, .tab, .forget, .transformSelectedText:
+            case .unknown, .navigation, .backspace, .enter, .escape, .function, .editSegment, .tab, .forget, .transformSelectedText, .reconvert:
                 return (.fallthrough, .fallthrough)
             }
         case .attachDiacritic(let diacritic):
@@ -181,7 +178,7 @@ public enum InputState: Sendable, Hashable {
                 } else {
                     return (.fallthrough, .fallthrough)
                 }
-            case .unknown, .tab, .transformSelectedText, .deadKey, .reconvert:
+            case .unknown, .transformSelectedText, .deadKey, .reconvert:
                 return (.fallthrough, .fallthrough)
             }
         case .previewing:
@@ -302,7 +299,7 @@ public enum InputState: Sendable, Hashable {
                 return (.consume, .fallthrough)
             case .英数:
                 return (.commitMarkedTextAndSelectInputLanguage(.english), .transition(.none))
-            case .unknown, .suggest, .tab, .transformSelectedText, .reconvert, .deadKey:
+            case .unknown, .suggest, .transformSelectedText, .deadKey, .reconvert:
                 return (.fallthrough, .fallthrough)
             }
         case .replaceSuggestion:
@@ -330,7 +327,7 @@ public enum InputState: Sendable, Hashable {
                 return (.submitReplaceSuggestionCandidate, .transition(.none))
             case .かな, .forget, .tab:
                 return (.consume, .fallthrough)
-            case .unknown, .function, .number, .editSegment, .transformSelectedText, .deadKey:
+            case .unknown, .function, .number, .editSegment, .transformSelectedText, .deadKey, .reconvert:
                 return (.fallthrough, .fallthrough)
             }
         }
