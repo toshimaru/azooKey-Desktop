@@ -95,10 +95,7 @@ public enum InputState: Sendable, Hashable {
                 } else {
                     return (.fallthrough, .fallthrough)
                 }
-            case .reconvert:
-                // Trigger reconversion for selected text
-                return (.fallthrough, .fallthrough)
-            case .unknown, .navigation, .backspace, .enter, .escape, .function, .editSegment, .tab, .forget, .transformSelectedText:
+            case .unknown, .navigation, .backspace, .enter, .escape, .function, .editSegment, .tab, .forget, .transformSelectedText, .reconvert:
                 return (.fallthrough, .fallthrough)
             }
         case .attachDiacritic(let diacritic):
