@@ -69,6 +69,7 @@ extension azooKeyMacInputController {
         let kanjiReadings = getReadingFromSystemAPI(for: text)
         for reading in kanjiReadings {
             if reading != text && reading != hiragana {
+                // Add the reading itself as a candidate
                 candidates.append(Candidate(
                     text: reading,
                     value: -10, // Lower priority than direct conversions
@@ -76,6 +77,18 @@ extension azooKeyMacInputController {
                     lastMid: 0,
                     data: []
                 ))
+
+                // Get kanji conversion candidates for this reading
+                // This generates alternatives like "あい" -> ["合い", "会い", "愛"]
+                let readingKanjiCandidates = getKanjiCandidates(from: reading)
+                for kanjiCandidate in readingKanjiCandidates {
+                    // Avoid duplicates and the original text
+                    if kanjiCandidate.text != text && !candidates.contains(where: { $0.text == kanjiCandidate.text }) {
+                        var modifiedCandidate = kanjiCandidate
+                        modifiedCandidate.value = -11 // Even lower priority
+                        candidates.append(modifiedCandidate)
+                    }
+                }
             }
         }
 
