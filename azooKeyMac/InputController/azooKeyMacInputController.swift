@@ -221,7 +221,7 @@ class azooKeyMacInputController: IMKInputController { // swiftlint:disable:this 
                 var actualRange = NSRange()
                 if let selectedText = client.string(from: selectedRange, actualRange: &actualRange) {
                     self.segmentsManager.appendDebugMessage("Reconvert: Selected text found: '\(selectedText)'")
-                    self.startReconversion(selectedText: selectedText, client: client)
+                    self.startReconversion(selectedText: selectedText)
                     return true
                 }
             } else {
@@ -235,7 +235,7 @@ class azooKeyMacInputController: IMKInputController { // swiftlint:disable:this 
                 var actualRange = NSRange()
                 if let selectedText = client.string(from: selectedRange, actualRange: &actualRange) {
                     self.segmentsManager.appendDebugMessage("Kana key: Selected text found, triggering reconversion: '\(selectedText)'")
-                    self.startReconversion(selectedText: selectedText, client: client)
+                    self.startReconversion(selectedText: selectedText)
                     return true
                 }
             }
@@ -377,7 +377,7 @@ class azooKeyMacInputController: IMKInputController { // swiftlint:disable:this 
             self.transformSelectedText(selectedText: selectedText, prompt: prompt)
         case .startReconversion(let selectedText):
             self.segmentsManager.appendDebugMessage("Executing startReconversion with text: '\(selectedText)'")
-            self.startReconversion(selectedText: selectedText, client: client)
+            self.startReconversion(selectedText: selectedText)
         // MARK: 特殊ケース
         case .consume:
             // 何もせず先に進む
