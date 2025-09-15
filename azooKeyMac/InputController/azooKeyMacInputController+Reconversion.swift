@@ -8,11 +8,17 @@ import KanaKanjiConverterModuleWithDefaultDictionary
 extension azooKeyMacInputController {
 
     @MainActor
-    func startReconversion(selectedText: String, client: IMKTextInput) {
+    func startReconversion(selectedText: String) {
         self.segmentsManager.appendDebugMessage("startReconversion: Starting reconversion for text: '\(selectedText)'")
 
         guard !selectedText.isEmpty else {
             self.segmentsManager.appendDebugMessage("startReconversion: No text selected")
+            return
+        }
+
+        // Get client
+        guard let client = self.client() else {
+            self.segmentsManager.appendDebugMessage("startReconversion: No client available")
             return
         }
 
