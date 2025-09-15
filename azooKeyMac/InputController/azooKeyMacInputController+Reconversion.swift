@@ -6,7 +6,6 @@ import KanaKanjiConverterModuleWithDefaultDictionary
 
 // MARK: - Reconversion Methods
 extension azooKeyMacInputController {
-
     @MainActor
     func startReconversion(selectedText: String) {
         self.segmentsManager.appendDebugMessage("startReconversion: Starting reconversion for text: '\(selectedText)'")
@@ -16,19 +15,16 @@ extension azooKeyMacInputController {
             return
         }
 
-        // Get client
         guard let client = self.client() else {
             self.segmentsManager.appendDebugMessage("startReconversion: No client available")
             return
         }
 
-        // Get selected range for replacement later
         let selectedRange = client.selectedRange()
         self.segmentsManager.appendDebugMessage("startReconversion: Selected range: \(selectedRange)")
 
         // Create basic conversion candidates
         let candidates = self.createReconversionCandidates(from: selectedText)
-
         if !candidates.isEmpty {
             self.segmentsManager.appendDebugMessage("startReconversion: Generated \(candidates.count) candidates")
 
@@ -38,13 +34,10 @@ extension azooKeyMacInputController {
                 selectedRange: selectedRange,
                 client: client
             )
-
         } else {
             self.segmentsManager.appendDebugMessage("startReconversion: No candidates generated")
         }
     }
-
-    // MARK: - Helper Methods
 
     @MainActor private func createReconversionCandidates(from text: String) -> [Candidate] {
         var candidates: [Candidate] = []
@@ -144,7 +137,6 @@ extension azooKeyMacInputController {
         return candidates
     }
 
-    // Helper method to get kanji conversion candidates
     @MainActor private func getKanjiCandidates(from hiragana: String) -> [Candidate] {
         // Use SegmentsManager's public method to get kanji candidates
         segmentsManager.getKanjiConversionCandidates(for: hiragana)
@@ -156,21 +148,17 @@ extension azooKeyMacInputController {
             return []
         }
 
-        // Check if text contains kanji characters
         let containsKanji = text.contains { char in
             let unicodeValue = char.unicodeScalars.first?.value ?? 0
             return unicodeValue >= 0x4E00 && unicodeValue <= 0x9FFF
         }
-
         guard containsKanji else {
             return []
         }
 
         let inputText = text as NSString
         let outputText = NSMutableString()
-
         var range: CFRange = CFRangeMake(0, inputText.length)
-        let locale: CFLocale = CFLocaleCopyCurrent()
 
         // Create tokenizer
         let tokenizer: CFStringTokenizer = CFStringTokenizerCreate(
@@ -178,13 +166,10 @@ extension azooKeyMacInputController {
             inputText as CFString,
             range,
             kCFStringTokenizerUnitWordBoundary,
-            locale
+            CFLocaleCopyCurrent()
         )
 
-        // Go to first position
         var tokenType: CFStringTokenizerTokenType = CFStringTokenizerGoToTokenAtIndex(tokenizer, 0)
-
-        // Perform morphological analysis
         while tokenType.rawValue != 0 {
             range = CFStringTokenizerGetCurrentTokenRange(tokenizer)
 
