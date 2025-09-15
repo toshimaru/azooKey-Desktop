@@ -230,9 +230,6 @@ extension azooKeyMacInputController {
     @MainActor private func setupReconversionState(candidates: [Candidate], selectedRange: NSRange, client: IMKTextInput) {
         self.segmentsManager.appendDebugMessage("setupReconversionState: Setting up reconversion with \(candidates.count) candidates")
 
-        // Store the selected range for later text replacement
-        self.storeReconversionContext(selectedRange: selectedRange, candidates: candidates)
-
         // Set up SegmentsManager to display candidates
         self.segmentsManager.setReconversionCandidates(candidates: candidates)
 
@@ -244,13 +241,5 @@ extension azooKeyMacInputController {
         self.refreshCandidateWindow()
 
         self.segmentsManager.appendDebugMessage("setupReconversionState: Candidate window should now be visible")
-    }
-
-    // MARK: - Reconversion Context Management
-
-    private func storeReconversionContext(selectedRange: NSRange, candidates: [Candidate]) {
-        // Store reconversion context - the existing candidate selection system
-        // handles text replacement automatically through the standard flow
-        self.segmentsManager.appendDebugMessage("storeReconversionContext: Stored range \(selectedRange) with \(candidates.count) candidates")
     }
 }
