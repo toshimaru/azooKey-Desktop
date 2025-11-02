@@ -204,7 +204,7 @@ class azooKeyMacInputController: IMKInputController { // swiftlint:disable:this 
         return handleClientAction(clientAction, clientActionCallback: clientActionCallback, client: client)
     }
 
-    /// Handle reconversion-related UserActions (.reconvert and .かな)
+    /// Handle reconversion-related UserActions (.reconvert)
     /// Returns Bool? - nil means continue processing, true/false means return that value
     @MainActor private func handleReconversionActions(userAction: UserAction, client: IMKTextInput) -> Bool? {
         switch userAction {
@@ -222,21 +222,6 @@ class azooKeyMacInputController: IMKInputController { // swiftlint:disable:this 
                 self.segmentsManager.appendDebugMessage("Reconvert: No text selected")
                 return true
             }
-        case .かな:
-            let selectedRange = client.selectedRange()
-            self.segmentsManager.appendDebugMessage("Kana key pressed. Selected range: \(selectedRange)")
-            if selectedRange.length > 0 {
-                var actualRange = NSRange()
-                if let selectedText = client.string(from: selectedRange, actualRange: &actualRange) {
-                    self.segmentsManager.appendDebugMessage("Kana key: Selected text found, triggering reconversion: '\(selectedText)'")
-                    self.startReconversion(selectedText: selectedText)
-                    return true
-                }
-            }
-            // If no text selected, fall through to normal Kana key processing via InputState
-            self.segmentsManager.appendDebugMessage("Kana key: No text selected, proceeding with language switch")
-            // Return nil to continue processing
-            return nil
         default:
             return nil
         }
