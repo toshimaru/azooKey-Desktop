@@ -169,9 +169,21 @@ class azooKeyMacInputController: IMKInputController { // swiftlint:disable:this 
 
         let userAction = UserAction.getUserAction(event: event, inputLanguage: inputLanguage)
 
-        // Handle reconversion-related actions
-        if let result = handleReconversionActions(userAction: userAction, client: client) {
-            return result
+        // Handle reconversion action
+        if case .reconvert = userAction {
+            let selectedRange = client.selectedRange()
+            self.segmentsManager.appendDebugMessage("Reconvert action detected. Selected range: \(selectedRange)")
+            if selectedRange.length > 0 {
+                var actualRange = NSRange()
+                if let selectedText = client.string(from: selectedRange, actualRange: &actualRange) {
+                    self.segmentsManager.appendDebugMessage("Reconvert: Selected text found: '\(selectedText)'")
+                    self.startReconversion(selectedText: selectedText)
+                    return true
+                }
+            } else {
+                self.segmentsManager.appendDebugMessage("Reconvert: No text selected")
+                return true
+            }
         }
 
         // Handle suggest action with selected text check (prevent recursive calls)
@@ -202,30 +214,6 @@ class azooKeyMacInputController: IMKInputController { // swiftlint:disable:this 
             enableSuggestion: Config.EnableOpenAiApiKey().value
         )
         return handleClientAction(clientAction, clientActionCallback: clientActionCallback, client: client)
-    }
-
-    /// Handle reconversion-related UserActions (.reconvert)
-    /// Returns Bool? - nil means continue processing, true/false means return that value
-    @MainActor private func handleReconversionActions(userAction: UserAction, client: IMKTextInput) -> Bool? {
-        switch userAction {
-        case .reconvert:
-            let selectedRange = client.selectedRange()
-            self.segmentsManager.appendDebugMessage("Reconvert action detected. Selected range: \(selectedRange)")
-            if selectedRange.length > 0 {
-                var actualRange = NSRange()
-                if let selectedText = client.string(from: selectedRange, actualRange: &actualRange) {
-                    self.segmentsManager.appendDebugMessage("Reconvert: Selected text found: '\(selectedText)'")
-                    self.startReconversion(selectedText: selectedText)
-                    return true
-                }
-            } else {
-                self.segmentsManager.appendDebugMessage("Reconvert: No text selected")
-                return true
-            }
-        default:
-            return nil
-        }
-        return nil
     }
 
     private var inputStyle: InputStyle {
