@@ -62,6 +62,9 @@ public enum ClientAction {
     case showPromptInputWindow
     case transformSelectedText(String, String)  // (selectedText, prompt)
 
+    // Reconversion
+    case startReconversion(String) // selectedText
+
     case stopComposition
 }
 
