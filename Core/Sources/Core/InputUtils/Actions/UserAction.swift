@@ -16,6 +16,7 @@ public enum UserAction {
     case suggest
     case forget
     case transformSelectedText
+    case reconvert
     case deadKey(String)
 
     public enum NavigationDirection: Sendable, Equatable, Hashable {
