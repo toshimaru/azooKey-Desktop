@@ -150,6 +150,14 @@ extension UserAction {
             } else {
                 return .unknown
             }
+        case 0x0F: // 'R'
+            if event.modifierFlags.contains(.shift) && event.modifierFlags.contains(.control) {
+                return .reconvert
+            } else if let text = event.characters, isPrintable(text) {
+                return .input(keyMap(text))
+            } else {
+                return .unknown
+            }
         case 0x24, 0x4C: // Enter (0x24) and Numpad Enter (0x4C)
             return .enter
         case 48: // Tab
